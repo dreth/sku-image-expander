@@ -35,7 +35,7 @@ func main() {
 			sku := row[0]
 
 			// catch rows where there's no filename
-			if len(row) == 2 {
+			if len(row) < 3 {
 				// add process to log
 				logmsg := fmt.Sprint("No filename found for SKU: ", sku)
 				fmt.Println(logmsg)
