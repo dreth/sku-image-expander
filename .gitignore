@@ -26,3 +26,4 @@ files
 # outputs
 *.txt
 output
+logs

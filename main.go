@@ -24,6 +24,10 @@ func main() {
 	// collect skus without filename
 	swf := []string{}
 
+	// create file to log the process
+	log_file, err := os.Create(fmt.Sprintf("log-%v.txt", time.Now().Format(time.RFC3339)))
+	handleErr(err, true, fmt.Sprintf("Could not create file: %v", err))
+
 	// iterate over rows
 	for idx, row := range rows {
 		if idx > 0 {
@@ -32,7 +36,10 @@ func main() {
 
 			// catch rows where there's no filename
 			if len(row) == 2 {
-				fmt.Println("No filename found for SKU: ", sku)
+				// add process to log
+				logmsg := fmt.Sprint("No filename found for SKU: ", sku)
+				fmt.Println(logmsg)
+				appendToFile(log_file, logmsg)
 
 				// appends sku to slice
 				swf = append(swf, sku)
@@ -41,12 +48,20 @@ func main() {
 				continue
 
 			} else {
-
 				// get the filename from the row
 				filename := row[2]
 
-				fmt.Printf("Processing SKU: %v, filename: %v", sku, filename)
-				fmt.Println()
+				// notify the process in console
+				logmsg := fmt.Sprint("Processing SKU: ", sku, ", filename: ", filename)
+				fmt.Println(logmsg)
+				appendToFile(log_file, logmsg)
+
+				// construct output filename
+				outputFilename := fmt.Sprintf("%v_1.jpg", sku)
+
+				// copy the file to the output directory
+				err := copyFile(filepath.Join("files", filename), filepath.Join("output", outputFilename))
+				handleErr(err, false, fmt.Sprintf("Could not copy file: %v", err))
 			}
 
 		}
