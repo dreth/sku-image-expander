@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	filePath := filepath.Join("files", "Imagenes.xlsx")
+	filePath := filepath.Join("files", "images.xlsx")
 	f, err := excelize.OpenFile(filePath)
 	handleErr(err, true, fmt.Sprintf("Could not open file: %v", err))
 
