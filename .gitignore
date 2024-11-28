@@ -27,3 +27,5 @@ files
 *.txt
 output
 logs
+
+dist/

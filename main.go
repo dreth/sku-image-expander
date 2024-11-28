@@ -14,69 +14,76 @@ func main() {
 	f, err := excelize.OpenFile(filePath)
 	handleErr(err, true, fmt.Sprintf("Could not open file: %v", err))
 
-	// Get all the rows in the Sheet1.
-	rows, err := f.GetRows("Sheet1")
+	// Get all the rows in the sheet data
+	rows, err := f.GetRows("data")
 	handleErr(err, true, fmt.Sprintf("The sheet with the table contents must be called 'data': %v", err))
 
-	// create output directory if it doesnt exist
+	// Create output directory if it doesn't exist
 	createDirIfNotExists("output")
 
-	// collect skus without filename
+	// Collect SKUs without filename
 	swf := []string{}
 
-	// create file to log the process
-	log_file, err := os.Create(fmt.Sprintf("log-%v.txt", time.Now().Format(time.RFC3339)))
-	handleErr(err, true, fmt.Sprintf("Could not create file: %v", err))
+	// Create file to log the process
+	logFile, err := os.Create("logfile.txt") // It's good practice to use a .txt extension
+	handleErr(err, true, fmt.Sprintf("Could not create log file: %v", err))
+	defer logFile.Close() // Ensure the log file is closed when the program exits
 
-	// iterate over rows
+	// Iterate over rows
 	for idx, row := range rows {
 		if idx > 0 {
-			// get sku (should always be present)
+			// Get SKU (should always be present)
 			sku := row[0]
 
-			// catch rows where there's no filename
-			if len(row) < 3 {
-				// add process to log
-				logmsg := fmt.Sprint("No filename found for SKU: ", sku)
-				fmt.Println(logmsg)
-				appendToFile(log_file, logmsg)
+			// Check if filename exists in the row
+			if len(row) < 3 || row[2] == "" {
+				// Add process to log
+				logMsg := fmt.Sprintf("No filename found for SKU: %s", sku)
+				fmt.Println(logMsg)
+				appendToFile(logFile, logMsg)
 
-				// appends sku to slice
+				// Append SKU to slice
 				swf = append(swf, sku)
 
-				// continue the loop
+				// Continue the loop
 				continue
-
-			} else {
-				// get the filename from the row
-				filename := row[2]
-
-				// notify the process in console
-				logmsg := fmt.Sprint("Processing SKU: ", sku, ", filename: ", filename)
-				fmt.Println(logmsg)
-				appendToFile(log_file, logmsg)
-
-				// construct output filename
-				outputFilename := fmt.Sprintf("%v_1.jpg", sku)
-
-				// copy the file to the output directory
-				err := copyFile(filepath.Join("files", filename), filepath.Join("output", outputFilename))
-				handleErr(err, false, fmt.Sprintf("Could not copy file: %v", err))
 			}
 
+			// Get the filename from the row
+			filename := row[2]
+
+			// Notify the process in console
+			logMsg := fmt.Sprintf("Processing SKU: %s, filename: %s", sku, filename)
+			fmt.Println(logMsg)
+			appendToFile(logFile, logMsg)
+
+			// Extract the file extension
+			ext := filepath.Ext(filename)
+			if ext == "" {
+				// If there's no extension, default to .jpg or handle as needed
+				ext = ".jpg"
+			}
+
+			// Construct output filename with original extension
+			outputFilename := fmt.Sprintf("%s%s", sku, ext)
+
+			// Copy the file to the output directory
+			err := copyFile(filepath.Join("files", filename), filepath.Join("output", outputFilename))
+			handleErr(err, false, fmt.Sprintf("Could not copy file: %v", err))
 		}
 	}
 
-	// if there's any sku without filename, create a text file with the skus
+	// If there are any SKUs without filenames, create a text file with the SKUs
 	if len(swf) > 0 {
-		// create a text file if it doesnt exist
-		swf_file, err := os.Create(fmt.Sprintf("SKUs-without-files-%v.txt", time.Now().Format(time.RFC3339)))
-		handleErr(err, true, fmt.Sprintf("Could not create file: %v", err))
+		// Create a text file with a timestamp
+		swfFilename := fmt.Sprintf("SKUs-without-files-%s.txt", time.Now().Format(time.RFC3339))
+		swfFile, err := os.Create(swfFilename)
+		handleErr(err, true, fmt.Sprintf("Could not create SKUs without files file: %v", err))
+		defer swfFile.Close()
 
-		// append skus to file
+		// Append SKUs to the file
 		for _, sku := range swf {
-			appendToFile(swf_file, sku)
+			appendToFile(swfFile, sku)
 		}
 	}
-
 }
